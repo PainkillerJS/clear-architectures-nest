@@ -2,7 +2,7 @@ import { LoggerType } from "../../domain/logger/logger.interface";
 import { TodoRepositoryType } from "../../domain/repositories/todo.repositories";
 import { TodoModel } from "../../domain/models/todo.model";
 
-export class addTodoUseCases {
+export class AddTodoUseCases {
   constructor(
     private readonly logger: LoggerType,
     private readonly todoRepository: TodoRepositoryType
