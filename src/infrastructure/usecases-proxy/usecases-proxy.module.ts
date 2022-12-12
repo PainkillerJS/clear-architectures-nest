@@ -10,11 +10,23 @@ import { LoggerService } from "../logger/logger.service";
 import { RepositoriesModule } from "../repositories/repositories.module";
 import { DatabaseTodoRepository } from "../repositories/todo.repository";
 import { UseCaseProxy } from "./usecases-proxy";
+import { JwtTokenService } from "../services/jwt/jwt.service";
+import { EnvironmentConfigService } from "../config/environment-config/environment-config.service";
+import { BcryptService } from "../services/bcrypt/bcrypt.service";
+import { UserRepository } from "../repositories/user.repository";
+import { LoginUseCases } from "../../usecases/auth/login.usecase";
+import { LogoutUseCases } from "../../usecases/auth/logout.usecases";
+import { IsAuthenticatedUseCases } from "../../usecases/auth/isAuthenticated.usecases";
 
 @Module({
   imports: [LoggerModule, RepositoriesModule, ExceptionsModule],
 })
 export class UsecasesProxyModule {
+  // Auth
+  static LOGIN_USECASES_PROXY = "LoginUseCasesProxy";
+  static IS_AUTHENTICATED_USECASES_PROXY = "IsAuthenticatedUseCasesProxy";
+  static LOGOUT_USECASES_PROXY = "LogoutUseCasesProxy";
+
   static GET_TODO_USECASES_PROXY = "getTodoUsecasesProxy";
   static GET_TODOS_USECASES_PROXY = "getTodosUsecasesProxy";
   static POST_TODO_USECASES_PROXY = "postTodoUsecasesProxy";
@@ -25,6 +37,43 @@ export class UsecasesProxyModule {
     return {
       module: UsecasesProxyModule,
       providers: [
+        {
+          inject: [
+            LoggerService,
+            JwtTokenService,
+            EnvironmentConfigService,
+            UserRepository,
+            BcryptService,
+          ],
+          provide: UsecasesProxyModule.LOGIN_USECASES_PROXY,
+          useFactory: (
+            logger: LoggerService,
+            jwtTokenService: JwtTokenService,
+            config: EnvironmentConfigService,
+            userRepo: UserRepository,
+            bcryptService: BcryptService
+          ) =>
+            new UseCaseProxy(
+              new LoginUseCases(
+                logger,
+                jwtTokenService,
+                config,
+                userRepo,
+                bcryptService
+              )
+            ),
+        },
+        {
+          inject: [UserRepository],
+          provide: UsecasesProxyModule.IS_AUTHENTICATED_USECASES_PROXY,
+          useFactory: (userRepo: UserRepository) =>
+            new UseCaseProxy(new IsAuthenticatedUseCases(userRepo)),
+        },
+        {
+          inject: [],
+          provide: UsecasesProxyModule.LOGOUT_USECASES_PROXY,
+          useFactory: () => new UseCaseProxy(new LogoutUseCases()),
+        },
         {
           inject: [DatabaseTodoRepository],
           provide: this.GET_TODO_USECASES_PROXY,
